@@ -1,0 +1,69 @@
+#version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node_api_app
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-secret123}
+      DB_NAME: ${POSTGRES_DB:-mydatabase}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal_net
+    restart: always
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret123}
+      POSTGRES_DB: ${POSTGRES_DB:-mydatabase}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-mydatabase}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_net
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal_net
+    restart: always
+
+networks:
+  internal_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
