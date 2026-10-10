@@ -23,4 +23,4 @@ function startReportWorker() {
   console.log('[Worker] Worker de reportes iniciado y listo para procesar trabajos.');
 }
 
-module.exports = startReportWorker;
+module.exports = startReportWorker; 
